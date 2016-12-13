@@ -571,19 +571,38 @@ class Engine(BaseEngine):
 
     def post_build(self, host, version, flatten=True, purge_last=True):
         client = self.get_client()
+
         container_id, = client.containers(
             filters={'name': 'ansible_%s_1' % host},
             limit=1, all=True, quiet=True
         )
+
         previous_image_id, previous_image_buildstamp = get_latest_image_for(
             self.project_name, host, client
         )
+
         cmd = self.config['services'][host].get('command', '')
         if isinstance(cmd, list):
             cmd = json.dumps(cmd)
+
         entrypoint = self.config['services'][host].get('entrypoint', '')
         if isinstance(entrypoint, list):
             entrypoint = json.dumps(entrypoint)
+
+        # logger.info('', )
+        logger.info(' ----> entrypoint: %s', entrypoint)
+        logger.info(' ----> cmd: %s', cmd)
+
+        if not entrypoint and not cmd:
+            logger.info(' ----> retrieving metadata from parent image...')
+            image = self.config['services'][host].get('image', '')
+            logger.info(' ----> image: %s', image)
+            inspect = client.inspect_image(image)
+            entrypoint = inspect.Config.Entrypoint
+            cmd = inspect.Config.Cmd
+            logger.info(' ----> entrypoint: %s', entrypoint)
+            logger.info(' ----> cmd: %s', cmd)
+
         image_config = dict(
             USER=self.config['services'][host].get('user', 'root'),
             LABEL='com.docker.compose.oneoff="" com.docker.compose.project="%s"' % self.project_name,

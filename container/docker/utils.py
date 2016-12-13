@@ -104,6 +104,7 @@ SERVICE_KEY_WHITELIST = [
     'restart',
     'stdin_open',
     'tmpfs',
+    'ulimits',
     'user',
     'volumes',
     'volumes_from',
